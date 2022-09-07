@@ -1,0 +1,17 @@
+Nuovo treno storico: *{{.Title | escape}}*
+{{.Subtitle | escape}}
+{{if .IsTimeless}}
+*⏳Treno su binari senza tempo⏳*
+{{end}}
+*{{.Locomotive}}*
+{{- if eq .Locomotive "Treno con locomotiva diesel" }}🚈{{end}}
+{{- if eq .Locomotive "Treno con locomotiva a vapore"}}🚂{{end}}
+{{- if eq .Locomotive "Treno con locomotiva elettrica" }}🚃{{end}}
+{{- if eq .Locomotive "Treno con automotrici" }}🚞{{end}}
+{{- if eq .Locomotive "Elettrotreno" }}🚄{{end}}
+{{.LocomotiveDetails | escape}}
+
+Il {{.Date | convertDate }}
+
+Partenza da: _{{.DepartureStation | escape}}_
+Fino a: _{{.ArriveStation | escape}}_
