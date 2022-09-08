@@ -100,3 +100,43 @@ func (b TelegramBot) SendTrain(train Train) error {
 
 	return nil
 }
+
+type Logger struct {
+	cfg Config
+	bot *tgbotapi.BotAPI
+}
+
+var _ log.Hook = Logger{}
+
+func (l Logger) Levels() []log.Level {
+	return []log.Level{
+		log.InfoLevel,
+		log.ErrorLevel,
+		log.FatalLevel,
+		log.WarnLevel,
+	}
+}
+
+func (l Logger) Fire(entry *log.Entry) error {
+	silent := false
+	var level string
+	switch entry.Level {
+	case log.ErrorLevel:
+		level = "*ERRORE*"
+	case log.FatalLevel:
+		level = "*ERRORE FATALE*"
+	case log.WarnLevel:
+		level = "*Warning*"
+	case log.InfoLevel:
+		level = "_Info_"
+		silent = true
+	default:
+		panic("Entry level not recognized")
+	}
+
+	msg := tgbotapi.NewMessage(l.cfg.AdminId, fmt.Sprintf("Log: %s\n%s\n`%s`", level, entry.Message, time.Now().Format(time.RubyDate)))
+	msg.ParseMode = tgbotapi.ModeMarkdownV2
+	msg.DisableNotification = silent
+	_, err := l.bot.Send(msg)
+	return err
+}

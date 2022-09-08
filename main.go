@@ -12,6 +12,7 @@ import (
 type Config struct {
 	TelegramBotToken          string
 	ChannelId                 int64
+	AdminId                   int64
 	TrainsUntilYearsInFuture  int
 	TrainsUntilMonthsInFuture int
 	TrainsUntilDaysInFuture   int
@@ -50,6 +51,10 @@ func main() {
 	}
 	log.Infoln("Telegram bot loaded")
 
+	if cfg.AdminId != 0 {
+		log.AddHook(Logger{cfg, bot.bot})
+	}
+
 	ticker := time.NewTicker(time.Hour)
 	for {
 		run(bot, h)
@@ -58,22 +63,25 @@ func main() {
 }
 
 func run(bot TelegramBot, h *HashSet[Train]) {
-	log.Infoln("Running")
+	log.Debugln("Running")
 	trains, err := LoadTrains()
 	if err != nil {
 		log.Errorln("Cannot load trains:", err)
 	}
 
 	hashDirty := false
-	log.Println("Hash", len(h.hash))
+	var (
+		trainsSent    int
+		trainsSkipped int
+	)
 	for _, train := range trains {
 		if h.IsSaved(train) {
-			log.Infoln("Skipping train, already sended", train)
+			log.Debugln("Skipping train, already sended", train)
 			continue
 		}
 
 		if train.When().After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
-			log.Infof("Skipping train %q, too far in the future: %q", train, train.Date)
+			log.Debugln("Skipping train %q, too far in the future: %q", train, train.Date)
 			continue
 		}
 
@@ -87,9 +95,12 @@ func run(bot TelegramBot, h *HashSet[Train]) {
 	}
 
 	if hashDirty {
-		log.Infoln("Saving hashes")
+		log.Debugln("Saving hashes")
 		h.SaveAsFile("trains.hash")
 	}
 
-	log.Infoln("Done running")
+	log.Debugln("Done running")
+
+	log.Infof("Executed run, %d new trains sent, %d trains skipped, %d hashes, %t dirty", trainsSent, trainsSkipped, len(h.hash), hashDirty)
+	hashDirty = false
 }
