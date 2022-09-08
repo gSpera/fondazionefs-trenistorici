@@ -55,15 +55,17 @@ func convertDate(date string) string {
 }
 
 type TelegramBot struct {
-	bot       *tgbotapi.BotAPI
-	channelId int64
+	bot *tgbotapi.BotAPI
+	Config
 }
 
-func NewTelegramBot(token string) (TelegramBot, error) {
+func NewTelegramBot(cfg Config) (TelegramBot, error) {
+	token := cfg.TelegramBotToken
 	bot, err := tgbotapi.NewBotAPI(token)
 
 	return TelegramBot{
-		bot: bot,
+		bot:    bot,
+		Config: cfg,
 	}, err
 }
 
@@ -76,7 +78,7 @@ func (b TelegramBot) SendTrain(train Train) error {
 
 	link := BaseURL + strings.TrimPrefix(train.Link, "/")
 	image := BaseURL + strings.TrimPrefix(train.Link, "/")
-	msg := tgbotapi.NewPhoto(b.channelId, tgbotapi.FileURL(image))
+	msg := tgbotapi.NewPhoto(b.ChannelId, tgbotapi.FileURL(image))
 	msg.Caption = html.UnescapeString(text.String())
 	msg.ParseMode = tgbotapi.ModeMarkdownV2
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
@@ -87,7 +89,7 @@ func (b TelegramBot) SendTrain(train Train) error {
 	if err != nil {
 		log.Errorln("cannot send train, retring without photo:", train, image, err)
 
-		safeMsg := tgbotapi.NewMessage(b.channelId, msg.Caption)
+		safeMsg := tgbotapi.NewMessage(b.ChannelId, msg.Caption)
 		safeMsg.ParseMode = tgbotapi.ModeMarkdownV2
 		safeMsg.ReplyMarkup = msg.ReplyMarkup
 		_, err = b.bot.Send(safeMsg)

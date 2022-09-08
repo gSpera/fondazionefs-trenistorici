@@ -1,4 +1,7 @@
 {
 	"TelegramBotToken": "123:XXX-XXX",
-	"ChannelId": 111
+	"ChannelId": 111,
+    "TrainsUntilYearsInFuture": 0,
+    "TrainsUntilMonthsInFuture": 1,
+    "TrainsUntilDaysInFuture": 15
 }

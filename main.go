@@ -2,26 +2,40 @@ package main
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
+type Config struct {
+	TelegramBotToken          string
+	ChannelId                 int64
+	TrainsUntilYearsInFuture  int
+	TrainsUntilMonthsInFuture int
+	TrainsUntilDaysInFuture   int
+}
+
 func main() {
-	type config struct {
-		TelegramBotToken string
-		ChannelId        int64
-	}
 	cfgBytes, err := os.ReadFile("config.json")
 	if err != nil {
 		log.Fatalln("Cannot load config:", err)
 	}
 
-	var cfg config
+	cfg := Config{
+		TrainsUntilYearsInFuture:  0,
+		TrainsUntilMonthsInFuture: 1,
+		TrainsUntilDaysInFuture:   0,
+	}
+
 	err = json.Unmarshal(cfgBytes, &cfg)
 	if err != nil {
 		log.Fatalln("Cannot unmarshal config:", err)
+	}
+
+	if cfg.TrainsUntilYearsInFuture < 0 || cfg.TrainsUntilMonthsInFuture < 0 || cfg.TrainsUntilDaysInFuture < 0 {
+		cfg.TrainsUntilYearsInFuture = math.MaxInt
 	}
 
 	h, err := LoadHashSetFromFile[Train]("trains.hash")
@@ -30,11 +44,10 @@ func main() {
 	}
 	log.Infof("HashSet loaded, %d hashes", len(h.hash))
 
-	bot, err := NewTelegramBot(cfg.TelegramBotToken)
+	bot, err := NewTelegramBot(cfg)
 	if err != nil {
 		log.Fatalln("Cannot create telegram bot:", err)
 	}
-	bot.channelId = cfg.ChannelId
 	log.Infoln("Telegram bot loaded")
 
 	ticker := time.NewTicker(time.Hour)
@@ -59,7 +72,7 @@ func run(bot TelegramBot, h *HashSet[Train]) {
 			continue
 		}
 
-		if train.When().After(time.Now().AddDate(0, 1, 0)) {
+		if train.When().After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
 			log.Infof("Skipping train %q, too far in the future: %q", train, train.Date)
 			continue
 		}
