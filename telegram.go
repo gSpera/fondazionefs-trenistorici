@@ -85,6 +85,11 @@ func (b TelegramBot) SendTrain(train Train) error {
 		tgbotapi.NewInlineKeyboardButtonURL("Maggiori informazioni", link),
 	))
 
+	if b.Config.DryRun {
+		log.Infof("Skipping train, dry run %q\n", train)
+		return nil
+	}
+
 	_, err = b.bot.Send(msg)
 	if err != nil {
 		log.Errorln("cannot send train, retring without photo:", train, image, err)

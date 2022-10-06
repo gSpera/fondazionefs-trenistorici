@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"math"
 	"os"
 	"time"
@@ -15,9 +16,13 @@ type Config struct {
 	TrainsUntilYearsInFuture  int
 	TrainsUntilMonthsInFuture int
 	TrainsUntilDaysInFuture   int
+	DryRun                    bool `json:"-"`
 }
 
 func main() {
+	dryRun := flag.Bool("dry", false, "dry run, doesn't send messages on telegram, updates hashes")
+	flag.Parse()
+
 	cfgBytes, err := os.ReadFile("config.json")
 	if err != nil {
 		log.Fatalln("Cannot load config:", err)
@@ -33,6 +38,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Cannot unmarshal config:", err)
 	}
+
+	cfg.DryRun = *dryRun
 
 	if cfg.TrainsUntilYearsInFuture < 0 || cfg.TrainsUntilMonthsInFuture < 0 || cfg.TrainsUntilDaysInFuture < 0 {
 		cfg.TrainsUntilYearsInFuture = math.MaxInt
