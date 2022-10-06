@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -83,11 +82,6 @@ func (t Train) When() time.Time {
 
 func (t Train) Hash() string {
 	hasher := md5.New()
-	bytes, err := json.Marshal(t)
-	if err != nil {
-		log.Errorln("Cannot marshal:", err)
-	}
-
-	hasher.Write(bytes)
+	hasher.Write([]byte(t.Link))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
