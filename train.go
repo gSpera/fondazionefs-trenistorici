@@ -45,18 +45,26 @@ var DateFormat = "Jan 2, 2006 03:04:05 AM"
 //		}
 
 type Train struct {
-	Title             string `json:"title"`
-	Subtitle          string `json:"subtitle"`
-	Link              string `json:"link"`
-	Region            string `json:"region"`
-	Locomotive        string `json:"locomotive"`
-	LocomotiveDetails string `json:"locomotiveOtherDetails"`
-	Month             string `json:"month"`
-	Date              string `json:"dateProp"`
-	IsTimeless        bool   `json:"isTimeless"`
-	DepartureStation  string `json:"departureStation"`
-	ArriveStation     string `json:"arriveStation"`
-	ImageURL          string `json:"image"`
+	Title               string `json:"title"`
+	Subtitle            string `json:"subtitle"`
+	Link                string `json:"link"`
+	Region              string `json:"region"`
+	Locomotive          string `json:"locomotive"`
+	LocomotiveDetails   string `json:"locomotiveOtherDetails"`
+	Month               string `json:"month"`
+	Date                string `json:"dateProp"`
+	IsTimeless          bool   `json:"isTimeless"`
+	DepartureStation    string `json:"departureStation"`
+	DepartureTime       string `json:"departureHour"`
+	ArriveStation       string `json:"arriveStation"`
+	ArriveTime          string `json:"arriveHour"`
+	ImageURL            string `json:"image"`
+	ReturnDepartureTime string `json:"returnDepartureHour"`
+	ReturnArriveTime    string `json:"returnArriveHour"`
+	PriceAdult          string `json:"priceAdult,omitempty"`
+	PriceChildren       string `json:"priceChild,omitempty"`
+	PriceAdultReturn    string `json:"priceAdultReturn,omitempty"`
+	PriceChildrenReturn string `json:"priceChildReturn,omitempty"`
 }
 
 func (t Train) String() string {

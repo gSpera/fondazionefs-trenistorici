@@ -51,7 +51,16 @@ func convertDate(date string) string {
 		log.Errorln("Cannot parse time:", err)
 	}
 
-	return monday.Format(tm, "2 January 2006 alle 15:04", monday.LocaleItIT)
+	date = monday.Format(tm, "2 January 2006", monday.LocaleItIT)
+
+	switch tm.Day() {
+	case 8, 11:
+		date = "L' " + date
+	default:
+		date = "Il " + date
+	}
+
+	return date
 }
 
 type TelegramBot struct {
