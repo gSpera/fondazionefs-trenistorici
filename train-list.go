@@ -28,8 +28,6 @@ func LoadTrains() ([]Train, error) {
 		return nil, errors.New("cannot find trains")
 	}
 
-	// os.WriteFile("trains.dump", []byte(html.UnescapeString(rawJson)), 0655)
-
 	unmarshal := struct {
 		AlreadyLoaded int
 		TrainsList    []Train

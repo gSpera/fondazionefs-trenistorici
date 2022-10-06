@@ -75,7 +75,7 @@ func run(bot TelegramBot, h *HashSet[Train]) {
 	log.Println("Hash", len(h.hash))
 	for _, train := range trains {
 		if h.IsSaved(train) {
-			log.Infoln("Skipping train, already sended", train)
+			log.Infoln("Skipping train, already sent:", train)
 			continue
 		}
 
