@@ -13,19 +13,19 @@ Nuovo treno storico: *{{.Title | escape}}*
 
  📅{{.Date | convertDate }}
 {{ if ne .PriceAdult "" }}
-🏷️ Prezzo {{ .PriceAdult -}}€
-{{- if ne .PriceChildren ""}} \(Bambini {{.PriceChildren}}€\) {{end -}}
+🏷️ Prezzo {{ .PriceAdult | escape -}}€
+{{- if ne .PriceChildren ""}} \(Bambini {{.PriceChildren | escape }}€\) {{end -}}
 {{end}}
 
 Partenza da *{{.DepartureStation | escape}}* 
 {{- if ne .DepartureTime ""}} alle _{{.DepartureTime}}_{{end}}
 Arrivo a *{{.ArriveStation | escape}}*
-{{- if ne .ArriveTime ""}} alle _{{.ArriveTime}}{{end}}_
+{{- if ne .ArriveTime ""}} alle _{{.ArriveTime}}_{{end}}
 {{- if ne .ReturnDepartureTime "" }}
 🔙 Ritorno alle _{{.ReturnDepartureTime}}_,
 {{- if ne .ReturnArriveTime "" }} arrivo alle _{{.ReturnArriveTime}}_ {{ end }}
 {{ end }}
 {{ if ne .PriceAdultReturn "" }}
-🏷️ Prezzo {{ .PriceAdultReturn }}€
-{{- if ne .PriceChildrenReturn ""}} \(Bambini {{.PriceChildrenReturn}}€\) {{end}}
+🏷️ Prezzo {{ .PriceAdultReturn | escape }}€
+{{- if ne .PriceChildrenReturn ""}} \(Bambini {{.PriceChildrenReturn | escape }}€\) {{end}}
 {{end}}
