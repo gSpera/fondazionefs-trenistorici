@@ -93,6 +93,7 @@ func (b TelegramBot) SendTrain(train Train) error {
 	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonURL("Maggiori informazioni", link),
 	))
+	msg.DisableNotification = b.Config.Silent
 
 	if b.Config.DryRun {
 		log.Infof("Skipping train, dry run %q\n", train)

@@ -17,10 +17,12 @@ type Config struct {
 	TrainsUntilMonthsInFuture int
 	TrainsUntilDaysInFuture   int
 	DryRun                    bool `json:"-"`
+	Silent                    bool `json:"-"`
 }
 
 func main() {
 	dryRun := flag.Bool("dry", false, "dry run, doesn't send messages on telegram, updates hashes")
+	silent := flag.Bool("silent", false, "send silent messages")
 	flag.Parse()
 
 	cfgBytes, err := os.ReadFile("config.json")
@@ -40,6 +42,7 @@ func main() {
 	}
 
 	cfg.DryRun = *dryRun
+	cfg.Silent = *silent
 
 	if cfg.TrainsUntilYearsInFuture < 0 || cfg.TrainsUntilMonthsInFuture < 0 || cfg.TrainsUntilDaysInFuture < 0 {
 		cfg.TrainsUntilYearsInFuture = math.MaxInt
