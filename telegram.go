@@ -90,9 +90,17 @@ func (b TelegramBot) SendTrain(train Train) error {
 	msg := tgbotapi.NewPhoto(b.ChannelId, tgbotapi.FileURL(image))
 	msg.Caption = html.UnescapeString(text.String())
 	msg.ParseMode = tgbotapi.ModeMarkdownV2
-	msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonURL("Maggiori informazioni", link),
 	))
+	canAddToCalendar, calendarUrl := httpAddressForTrain(train, b.Config.HttpPublicAddress)
+	if canAddToCalendar {
+		inlineKeyboard.InlineKeyboard = append(inlineKeyboard.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("Aggiungi al calendario", calendarUrl)),
+		)
+	}
+
+	msg.ReplyMarkup = inlineKeyboard
 	msg.DisableNotification = b.Config.Silent
 
 	if b.Config.DryRun {

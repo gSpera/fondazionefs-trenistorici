@@ -13,6 +13,8 @@ import (
 type Config struct {
 	TelegramBotToken          string
 	ChannelId                 int64
+	HttpPublicAddress         string
+	HttpListenAddress         string
 	TrainsUntilYearsInFuture  int
 	TrainsUntilMonthsInFuture int
 	TrainsUntilDaysInFuture   int
@@ -59,6 +61,8 @@ func main() {
 		log.Fatalln("Cannot create telegram bot:", err)
 	}
 	log.Infoln("Telegram bot loaded")
+
+	go startAndListenHttpServer(cfg.HttpListenAddress)
 
 	ticker := time.NewTicker(time.Hour)
 	for {

@@ -1,6 +1,8 @@
 {
 	"TelegramBotToken": "123:XXX-XXX",
 	"ChannelId": 111,
+    "HttpBaseAddress": "https://example.com",
+    "HttpListenAddress": ":8080",
     "TrainsUntilYearsInFuture": 0,
     "TrainsUntilMonthsInFuture": 1,
     "TrainsUntilDaysInFuture": 15

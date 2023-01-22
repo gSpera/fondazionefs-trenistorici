@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
+	github.com/arran4/golang-ical v0.0.0-20221122102835-109346913e54
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/goodsign/monday v1.0.0
 	github.com/sirupsen/logrus v1.9.0

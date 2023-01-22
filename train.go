@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,6 +13,15 @@ import (
 
 var BaseURL string = "https://www.fondazionefs.it/"
 var DateFormat = "Jan 2, 2006 03:04:05 AM"
+var timezone *time.Location
+
+func init() {
+	var err error
+	timezone, err = time.LoadLocation("Europe/Rome")
+	if err != nil {
+		panic("Cannot load timezone location Europe/Rome")
+	}
+}
 
 //	{
 //		  "dateProp": "Dec 30, 2022 12:00:00 AM",
@@ -84,4 +94,68 @@ func (t Train) Hash() string {
 	hasher := md5.New()
 	hasher.Write([]byte(t.Link))
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func (t Train) UniqueID() string {
+	return strings.TrimSuffix(strings.TrimPrefix(t.Link, "/content/fondazionefs/it/treni-storici/"), ".html")
+}
+
+// DepartureArriveTime tries to extract the departure and arrive time of the train.
+// Extracting these information is not always possible, if only one of the time can be
+// obtained ok will be false
+func (t Train) DepartureArriveTime() (ok bool, departure, arrive time.Time) {
+	ok = false
+	var err error
+
+	date := t.When()
+
+	// Departure
+	departure, err = time.Parse("15:04", t.DepartureTime)
+	if err != nil {
+		log.Errorln("Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		return
+	}
+
+	// Arrive
+	arrive, err = time.Parse("15:04", t.ArriveTime)
+	if err != nil {
+		log.Errorln("Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		return
+	}
+
+	departure = time.Date(date.Year(), date.Month(), date.Day(), departure.Hour(), departure.Minute(), departure.Second(), 0, timezone)
+	arrive = time.Date(date.Year(), date.Month(), date.Day(), arrive.Hour(), arrive.Minute(), arrive.Second(), 0, timezone)
+
+	ok = true
+	return
+}
+
+// ReturnDepartureArriveTime tries to extract the departure and arrive time of the return train.
+// Extracting these information is not always possible, if only one of the time can be
+// obtained ok will be false
+func (t Train) ReturnDepartureArriveTime() (ok bool, departure, arrive time.Time) {
+	ok = false
+	var err error
+
+	date := t.When()
+
+	// Departure
+	departure, err = time.Parse("15:04", t.ReturnDepartureTime)
+	if err != nil {
+		log.Errorln("Return Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		return
+	}
+
+	// Arrive
+	arrive, err = time.Parse("15:04", t.ReturnArriveTime)
+	if err != nil {
+		log.Errorln("return Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		return
+	}
+
+	departure = time.Date(date.Year(), date.Month(), date.Day(), departure.Hour(), departure.Minute(), departure.Second(), 0, date.Location())
+	arrive = time.Date(date.Year(), date.Month(), date.Day(), arrive.Hour(), arrive.Minute(), arrive.Second(), 0, date.Location())
+
+	ok = true
+	return
 }

@@ -1,0 +1,22 @@
+{{.Subtitle}}
+{{if .IsTimeless}}
+⏳Treno su binari senza tempo⏳
+{{end}}
+{{.Locomotive}}
+{{- if eq .Locomotive "Treno con locomotiva diesel" }}🚈{{end}}
+{{- if eq .Locomotive "Treno con locomotiva a vapore"}}🚂{{end}}
+{{- if eq .Locomotive "Treno con locomotiva elettrica" }}🚃{{end}}
+{{- if eq .Locomotive "Treno con automotrici" }}🚞{{end}}
+{{- if eq .Locomotive "Elettrotreno" }}🚄{{end}}
+{{.LocomotiveDetails }}
+
+Partenza da {{.DepartureStation }} 
+{{- if ne .DepartureTime ""}} alle {{.DepartureTime}}{{end}}
+Arrivo a {{.ArriveStation }}
+{{- if ne .ArriveTime ""}} alle {{.ArriveTime}}{{end}}
+{{- if ne .ReturnDepartureTime "" }}
+🔙 Ritorno alle {{.ReturnDepartureTime}},
+{{- if ne .ReturnArriveTime "" }} arrivo alle {{.ReturnArriveTime}} {{ end }}
+{{ end }}
+
+Maggiori informazioni su https://www.fondazionefs.it/{{ .Link }}
