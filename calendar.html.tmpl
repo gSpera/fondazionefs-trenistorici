@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            font-family: 'Roboto';
+        }
+
+        #hero {
+            width: 100vw;
+            height: 100vh;
+            filter: sepia(30%) grayscale(10%);
+            background-image: url("https://www.fondazionefs.it/{{.ImageURL}}");
+            background-position: center;
+            position: absolute;
+            top: 0;
+            z-index: -1;
+        }
+
+        #main {
+            display: block;
+            margin: auto;
+            margin-top: 15vh;
+            background-color: rgb(243, 235, 214);
+            width: 70%;
+            box-shadow: 7px 16px 10px 0px rgb(243, 235, 214);
+            padding: 0.5rem;
+            padding-left: 1.5rem;
+            border-radius: 20px;
+        }
+
+        #main h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="hero">
+    </div>
+
+    <div id="main">
+        <h1>{{.Title}}</h1>
+        <h2>{{.Subtitle}}</h2>
+        {{if .IsTimeless}}
+        <h3>⏳Treno su binari senza tempo⏳</h3>
+        {{end}}
+        {{.Date}}
+        <p>
+            <i>
+                {{.Locomotive}}
+                {{- if eq .Locomotive "Treno con locomotiva diesel" }}🚈{{end}}
+                {{- if eq .Locomotive "Treno con locomotiva a vapore"}}🚂{{end}}
+                {{- if eq .Locomotive "Treno con locomotiva elettrica" }}🚃{{end}}
+                {{- if eq .Locomotive "Treno con automotrici" }}🚞{{end}}
+                {{- if eq .Locomotive "Elettrotreno" }}🚄{{end}}
+            </i>
+        </p>
+        <p>{{.LocomotiveDetails}}</p>
+    </div>
+</body>
+
+</html>

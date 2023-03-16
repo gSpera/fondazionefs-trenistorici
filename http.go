@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	_ "embed"
+	htmltemplate "html/template"
 	"net/http"
 	"strings"
 	"text/template"
@@ -14,10 +15,15 @@ import (
 //go:embed calendar.tmpl
 var calendarTemplateSource string
 
+//go:embed calendar.html.tmpl
+var calendarHtmlTemplateSource string
+
 var calendarTemplate = template.Must(template.New("calendar").Parse(calendarTemplateSource))
+var calendarHtmlTemplate = htmltemplate.Must(htmltemplate.New("calendar.html").Parse(calendarHtmlTemplateSource))
 
 func startAndListenHttpServer(addr string) {
 	http.HandleFunc("/ics/", httpHandleTrainCreateICal)
+	http.HandleFunc("/html/", httpHandleTrainIcalHtml)
 	log.Println("Listening on: " + addr)
 	http.ListenAndServe(addr, nil)
 }
@@ -32,6 +38,41 @@ func httpAddressForTrain(t Train, baseUrl string) (ok bool, url string) {
 
 	url = baseUrl + "/ics/" + t.UniqueID()
 	return
+}
+
+func httpHandleTrainIcalHtml(w http.ResponseWriter, r *http.Request) {
+	trainID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/html/"), ".html")
+	trains, err := LoadTrains()
+	if err != nil {
+		log.Errorln("Cannot load trains:", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	var train Train
+	for _, t := range trains {
+		if trainID == t.UniqueID() {
+			train = t
+			break
+		}
+	}
+
+	if train.Link == "" {
+		// Cannot find the train
+		log.Errorln("Cannot find train:", trainID)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	calendarHtmlTemplate, err := htmltemplate.New("calendar.html.hot").ParseFiles("calendar.html.tmpl")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Errorln("Cannot parse tmpl:", err)
+		return
+	}
+	err = calendarHtmlTemplate.ExecuteTemplate(w, "calendar.html.tmpl", train)
+	if err != nil {
+		log.Errorln(err)
+	}
 }
 
 func httpHandleTrainCreateICal(w http.ResponseWriter, r *http.Request) {
