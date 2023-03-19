@@ -93,7 +93,7 @@ func (b TelegramBot) SendTrain(train Train) error {
 	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonURL("Maggiori informazioni", link),
 	))
-	canAddToCalendar, calendarUrl := httpAddressForTrain(train, b.Config.HttpPublicAddress)
+	canAddToCalendar, calendarUrl := httpHtmlAddressForTrain(train, b.Config.HttpPublicAddress)
 	if canAddToCalendar {
 		inlineKeyboard.InlineKeyboard = append(inlineKeyboard.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonURL("Aggiungi al calendario", calendarUrl)),

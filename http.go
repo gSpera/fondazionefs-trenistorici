@@ -9,7 +9,10 @@ import (
 	"text/template"
 
 	ics "github.com/arran4/golang-ical"
+	"github.com/goodsign/monday"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 //go:embed calendar.tmpl
@@ -21,14 +24,17 @@ var calendarHtmlTemplateSource string
 var calendarTemplate = template.Must(template.New("calendar").Parse(calendarTemplateSource))
 var calendarHtmlTemplate = htmltemplate.Must(htmltemplate.New("calendar.html").Parse(calendarHtmlTemplateSource))
 
-func startAndListenHttpServer(addr string) {
+// Used instead of string.Title
+var titler = cases.Title(language.Italian)
+
+func startAndListenHttpServer(addr string, baseURL string) {
 	http.HandleFunc("/ics/", httpHandleTrainCreateICal)
-	http.HandleFunc("/html/", httpHandleTrainIcalHtml)
+	http.HandleFunc("/html/", httpHandleTrainIcalHtml(baseURL))
 	log.Println("Listening on: " + addr)
 	http.ListenAndServe(addr, nil)
 }
 
-func httpAddressForTrain(t Train, baseUrl string) (ok bool, url string) {
+func httpICalAddressForTrain(t Train, baseUrl string) (ok bool, url string) {
 	ok = false
 	url = ""
 	ok, _, _ = t.DepartureArriveTime()
@@ -40,38 +46,51 @@ func httpAddressForTrain(t Train, baseUrl string) (ok bool, url string) {
 	return
 }
 
-func httpHandleTrainIcalHtml(w http.ResponseWriter, r *http.Request) {
-	trainID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/html/"), ".html")
-	trains, err := LoadTrains()
-	if err != nil {
-		log.Errorln("Cannot load trains:", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+func httpHtmlAddressForTrain(t Train, baseUrl string) (ok bool, url string) {
+	ok = false
+	url = ""
+	ok, _, _ = t.DepartureArriveTime()
+	if !ok {
 		return
 	}
-	var train Train
-	for _, t := range trains {
-		if trainID == t.UniqueID() {
-			train = t
-			break
+
+	url = baseUrl + "/html/" + t.UniqueID()
+	return
+}
+
+func httpHandleTrainIcalHtml(baseURL string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		trainID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/html/"), ".html")
+		trains, err := LoadTrains()
+		if err != nil {
+			log.Errorln("Cannot load trains:", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
 		}
-	}
+		var train Train
+		for _, t := range trains {
+			if trainID == t.UniqueID() {
+				train = t
+				break
+			}
+		}
 
-	if train.Link == "" {
-		// Cannot find the train
-		log.Errorln("Cannot find train:", trainID)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
+		if train.Link == "" {
+			// Cannot find the train
+			log.Errorln("Cannot find train:", trainID)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 
-	calendarHtmlTemplate, err := htmltemplate.New("calendar.html.hot").ParseFiles("calendar.html.tmpl")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		log.Errorln("Cannot parse tmpl:", err)
-		return
-	}
-	err = calendarHtmlTemplate.ExecuteTemplate(w, "calendar.html.tmpl", train)
-	if err != nil {
-		log.Errorln(err)
+		_, icalURL := httpICalAddressForTrain(train, baseURL)
+		err = calendarHtmlTemplate.ExecuteTemplate(w, "calendar.html", struct {
+			Train
+			ICalURL       string
+			FormattedDate string
+		}{train, icalURL, titler.String(monday.Format(train.When(), "Monday 2 January 2006, 15:04", monday.LocaleItIT))})
+		if err != nil {
+			log.Errorln(err)
+		}
 	}
 }
 

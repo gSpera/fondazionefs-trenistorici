@@ -62,7 +62,7 @@ func main() {
 	}
 	log.Infoln("Telegram bot loaded")
 
-	go startAndListenHttpServer(cfg.HttpListenAddress)
+	go startAndListenHttpServer(cfg.HttpListenAddress, cfg.HttpPublicAddress)
 
 	ticker := time.NewTicker(time.Hour)
 	for {

@@ -20,21 +20,30 @@
             filter: sepia(30%) grayscale(10%);
             background-image: url("https://www.fondazionefs.it/{{.ImageURL}}");
             background-position: center;
+            background-attachment: fixed;
+            background-size: cover;
             position: absolute;
             top: 0;
             z-index: -1;
         }
 
-        #main {
+        #main,
+        #download-box {
             display: block;
             margin: auto;
-            margin-top: 15vh;
+            margin-top: 10vh;
             background-color: rgb(243, 235, 214);
             width: 70%;
-            box-shadow: 7px 16px 10px 0px rgb(243, 235, 214);
             padding: 0.5rem;
             padding-left: 1.5rem;
-            border-radius: 20px;
+            padding-right: 1.5rem;
+            border-radius: 10px;
+        }
+
+        #download-box {
+            border-radius: 10px;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
         }
 
         #main h2 {
@@ -53,7 +62,7 @@
         {{if .IsTimeless}}
         <h3>⏳Treno su binari senza tempo⏳</h3>
         {{end}}
-        {{.Date}}
+        {{.FormattedDate}}
         <p>
             <i>
                 {{.Locomotive}}
@@ -65,6 +74,16 @@
             </i>
         </p>
         <p>{{.LocomotiveDetails}}</p>
+    </div>
+    <div id="download-box">
+        <p>
+            Download in corso...
+            <br>
+            <a href="{{.ICalURL}}" download id="download-a">Altrimenti clicca qui</a>
+        </p>
+        <script>
+            document.getElementById("download-a").click();
+        </script>
     </div>
 </body>
 
