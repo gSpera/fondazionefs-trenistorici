@@ -51,14 +51,8 @@ func convertDate(date string) string {
 		log.Errorln("Cannot parse time:", err)
 	}
 
-	date = monday.Format(tm, "2 January 2006", monday.LocaleItIT)
-
-	switch tm.Day() {
-	case 8, 11:
-		date = "L' " + date
-	default:
-		date = "Il " + date
-	}
+	date = monday.Format(tm, "Monday 2 January 2006", monday.LocaleItIT)
+	date = strings.ToUpper(string(date[0])) + date[1:] // Not the best method
 
 	return date
 }
@@ -66,6 +60,8 @@ func convertDate(date string) string {
 type TelegramBot struct {
 	bot *tgbotapi.BotAPI
 	Config
+
+	lastNotification time.Time
 }
 
 func NewTelegramBot(cfg Config) (TelegramBot, error) {
@@ -73,12 +69,13 @@ func NewTelegramBot(cfg Config) (TelegramBot, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 
 	return TelegramBot{
-		bot:    bot,
-		Config: cfg,
+		bot:              bot,
+		Config:           cfg,
+		lastNotification: time.Unix(0, 0),
 	}, err
 }
 
-func (b TelegramBot) SendTrain(train Train) error {
+func (b *TelegramBot) SendTrain(train Train) error {
 	text := &bytes.Buffer{}
 	err := msgTemplate.Execute(text, train)
 	if err != nil {
@@ -102,6 +99,13 @@ func (b TelegramBot) SendTrain(train Train) error {
 
 	msg.ReplyMarkup = inlineKeyboard
 	msg.DisableNotification = b.Config.Silent
+
+	if time.Now().After(b.lastNotification.Add(10 * time.Minute)) {
+		b.lastNotification = time.Now()
+		log.Info("Sending notification")
+	} else {
+		msg.DisableNotification = true
+	}
 
 	if b.Config.DryRun {
 		log.Infof("Skipping train, dry run %q\n", train)
