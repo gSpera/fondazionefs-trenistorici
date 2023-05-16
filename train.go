@@ -112,14 +112,14 @@ func (t Train) DepartureArriveTime() (ok bool, departure, arrive time.Time) {
 	// Departure
 	departure, err = time.Parse("15:04", t.DepartureTime)
 	if err != nil {
-		log.Errorln("Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		log.Errorln("Train Departure time but cannot parse:", t.DepartureTime, ":", err)
 		return
 	}
 
 	// Arrive
 	arrive, err = time.Parse("15:04", t.ArriveTime)
 	if err != nil {
-		log.Errorln("Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		log.Errorln("Train Arrive time but cannot parse:", t.DepartureTime, ":", err)
 		return
 	}
 
