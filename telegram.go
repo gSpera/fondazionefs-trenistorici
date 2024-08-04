@@ -84,24 +84,32 @@ func NewTelegramBot(cfg Config) (TelegramBot, error) {
 	}, err
 }
 
-func (b *TelegramBot) SendTrain(train Train) error {
+func (b *TelegramBot) SendTrain(train Train) (int, error) {
 	text := &bytes.Buffer{}
 	err := msgTemplate.Execute(text, train)
 	if err != nil {
-		return fmt.Errorf("cannot execute template: %w", err)
+		return 0, fmt.Errorf("cannot execute template: %w", err)
 	}
 
 	link := BaseURL + strings.TrimPrefix(train.Link, "/")
-	image := strings.TrimPrefix(train.ImageURL, "/")
+	image := BaseURL + strings.TrimPrefix(train.ImageURL, "/")
 
 	// Check image size
-	res, err := http.Head(image)
 	var img tgbotapi.RequestFileData = tgbotapi.FileURL(image)
-	length, err2 := strconv.Atoi(res.Header.Get("Content-Length"))
+	var length int
+	res, err := http.Head(image)
+	if err != nil {
+		log.Warnln("Cannot head train image:", err)
+		goto defaultImg
+	}
+	length, err = strconv.Atoi(res.Header.Get("Content-Length"))
 	log.Debugf("Train image size: %s %v bytes\n", image, length)
-	if err != nil || err2 != nil || length <= 0 {
-		log.Warnln("Cannot head the train image:", err, err2)
-	} else if length > 10*1024*1024 {
+	if err != nil || length <= 0 {
+		log.Warnln("Cannot convert the train image length:", err, res.Header.Get("Content-Length"))
+		goto defaultImg
+	}
+
+	if length > 10*1024*1024 {
 		// Over 10MB need to resize
 		log.Infof("Image is over > 10Mb (%vKB), resing\n", length/1024)
 		res, err = http.Get(image)
@@ -131,6 +139,7 @@ func (b *TelegramBot) SendTrain(train Train) error {
 			}
 		}
 	}
+defaultImg:
 
 	msg := tgbotapi.NewPhoto(b.ChannelId, img)
 	msg.Caption = html.UnescapeString(text.String())
@@ -150,17 +159,17 @@ func (b *TelegramBot) SendTrain(train Train) error {
 
 	if time.Now().After(b.lastNotification.Add(10 * time.Minute)) {
 		b.lastNotification = time.Now()
-		log.Info("Sending notification")
+		log.Infoln("Sending notification")
 	} else {
 		msg.DisableNotification = true
 	}
 
 	if b.Config.DryRun {
 		log.Infof("Skipping train, dry run %q\n", train)
-		return nil
+		return 0, nil
 	}
 
-	_, err = b.bot.Send(msg)
+	msgRes, err := b.bot.Send(msg)
 	if err != nil {
 		log.Errorln("Cannot send train, retring without photo:", train, image, err)
 
@@ -169,11 +178,40 @@ func (b *TelegramBot) SendTrain(train Train) error {
 		safeMsg.ReplyMarkup = msg.ReplyMarkup
 		_, err = b.bot.Send(safeMsg)
 		if err != nil {
-			return fmt.Errorf("cannot send safe message: %q %w", train, err)
+			return 0, fmt.Errorf("cannot send safe message: %q %w", train, err)
 		}
 	}
 
-	return nil
+	return msgRes.MessageID, nil
+}
+
+func (b *TelegramBot) EditMessage(train Train, msgID int) error {
+	link := BaseURL + strings.TrimPrefix(train.Link, "/")
+	text := &bytes.Buffer{}
+	err := msgTemplate.Execute(text, train)
+	if err != nil {
+		return fmt.Errorf("cannot execute template: %w", err)
+	}
+
+	caption := html.UnescapeString(text.String())
+	msg := tgbotapi.NewEditMessageCaption(b.ChannelId, msgID, caption)
+
+	msg.ParseMode = tgbotapi.ModeMarkdownV2
+	inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonURL("Maggiori informazioni", link),
+	))
+	canAddToCalendar, calendarUrl := httpHtmlAddressForTrain(train, b.Config.HttpPublicAddress)
+	if canAddToCalendar {
+		inlineKeyboard.InlineKeyboard = append(inlineKeyboard.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("Aggiungi al calendario", calendarUrl)),
+		)
+	}
+
+	msg.ReplyMarkup = &inlineKeyboard
+	if !b.Config.DryRun {
+		_, err = b.bot.Send(msg)
+	}
+	return err
 }
 
 // resizeImage resizes the given images, it doesn't check

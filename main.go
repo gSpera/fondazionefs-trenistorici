@@ -50,9 +50,9 @@ func main() {
 		cfg.TrainsUntilYearsInFuture = math.MaxInt
 	}
 
-	h, err := LoadHashSetFromFile[Train]("trains.hash")
+	h, err := LoadTrainArchiveFromFile("trains.hash")
 	if err != nil {
-		log.Fatalln("Cannot load hashset:", err)
+		log.Fatalln("Cannot load train archive:", err)
 	}
 	log.Infof("HashSet loaded, %d hashes", len(h.hash))
 
@@ -71,7 +71,7 @@ func main() {
 	}
 }
 
-func run(bot *TelegramBot, h *HashSet[Train]) {
+func run(bot *TelegramBot, h *TrainArchive) {
 	log.Infoln("Running")
 	trains, err := LoadTrains()
 	if err != nil {
@@ -81,23 +81,38 @@ func run(bot *TelegramBot, h *HashSet[Train]) {
 	hashDirty := false
 	log.Println("Hash", len(h.hash))
 	for _, train := range trains {
-		if h.IsSaved(train) {
-			log.Infoln("Skipping train, already sent:", train)
-			continue
-		}
-
 		if train.When().After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
 			log.Infof("Skipping train %q, too far in the future: %q", train, train.Date)
 			continue
 		}
 
-		err := bot.SendTrain(train)
-		if err != nil {
-			log.Errorln("Cannot send train:", err)
+		switch h.Compare(train) {
+		case TrainSaved:
+			log.Infoln("Skipping train, already sent:", train)
 			continue
+		case TrainChanged:
+			if h.GetID(train) == 0 {
+				// Train was sent dry, do nothing
+				log.Infoln("Skipping updating train sent dry:", train)
+				continue
+			}
+			log.Infoln("Changing train:", train)
+			err := bot.EditMessage(train, h.GetID(train))
+			if err != nil {
+				log.Errorln("Cannot change train:", train, ":", err)
+			}
+			h.Add(train, h.GetID(train))
+			hashDirty = true
+		case TrainNotSaved:
+			log.Infoln("Sending train:", train)
+			msgID, err := bot.SendTrain(train)
+			if err != nil {
+				log.Errorln("Cannot send train:", err)
+				continue
+			}
+			h.Add(train, msgID)
+			hashDirty = true
 		}
-		h.Add(train)
-		hashDirty = true
 	}
 
 	if hashDirty {
