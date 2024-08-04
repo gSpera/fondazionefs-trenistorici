@@ -13,7 +13,7 @@ type TrainArchive struct {
 }
 type trainArchiveValue struct {
 	MessageID int
-	Train     Train
+	TrainHash string
 }
 
 func LoadTrainArchive(r io.Reader) (*TrainArchive, error) {
@@ -68,7 +68,7 @@ func (t *TrainArchive) Add(train Train, msgID int) {
 
 	t.hash[train.UniqueID()] = trainArchiveValue{
 		MessageID: msgID,
-		Train:     train,
+		TrainHash: train.Hash(),
 	}
 }
 
@@ -85,7 +85,7 @@ func (t *TrainArchive) Compare(new Train) TrainArchiveCompare {
 	if !found {
 		return TrainNotSaved
 	}
-	if new != old.Train {
+	if new.Hash() != old.TrainHash {
 		return TrainChanged
 	}
 
