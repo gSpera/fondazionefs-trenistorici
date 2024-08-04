@@ -8,7 +8,8 @@ require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/goodsign/monday v1.0.0
 	github.com/sirupsen/logrus v1.9.0
-	golang.org/x/text v0.3.7
+	golang.org/x/image v0.18.0
+	golang.org/x/text v0.16.0
 )
 
 require (
