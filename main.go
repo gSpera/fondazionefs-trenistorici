@@ -66,12 +66,12 @@ func main() {
 
 	ticker := time.NewTicker(time.Hour)
 	for {
-		run(bot, h)
+		run(&bot, h)
 		<-ticker.C
 	}
 }
 
-func run(bot TelegramBot, h *HashSet[Train]) {
+func run(bot *TelegramBot, h *HashSet[Train]) {
 	log.Infoln("Running")
 	trains, err := LoadTrains()
 	if err != nil {
