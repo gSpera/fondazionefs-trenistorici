@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 )
 
 var BaseURL string = "https://www.fondazionefs.it/"
-var DateFormat = "Jan 2, 2006 03:04:05 AM"
+var DateFormats = []string{"Jan 2, 2006 03:04:05 PM", "Jan 2, 2006, 03:04:05 PM"}
 var timezone *time.Location
 
 func init() {
@@ -81,14 +80,22 @@ func (t Train) String() string {
 	return t.Title
 }
 
-func (t Train) When() time.Time {
-	date, err := time.Parse(DateFormat, t.Date)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot convert date: %v", err)
-		log.Errorln("Cannot convert time:", err)
+func (t Train) When() (time.Time, error) {
+	var date time.Time
+	var err error
+
+	for _, format := range DateFormats {
+		date, err = time.Parse(format, t.Date)
+		if err == nil {
+			break
+		}
 	}
 
-	return date
+	if err != nil {
+		return time.Time{}, fmt.Errorf("cannot parse train date: %w", err)
+	}
+
+	return date, nil
 }
 
 func (t Train) Hash() string {
@@ -113,7 +120,11 @@ func (t Train) DepartureArriveTime() (ok bool, departure, arrive time.Time) {
 	ok = false
 	var err error
 
-	date := t.When()
+	date, err := t.When()
+	if err != nil {
+		log.Errorln("Cannot get train date:", err)
+		return
+	}
 
 	// Departure
 	departure, err = time.Parse("15:04", t.DepartureTime)
@@ -143,7 +154,11 @@ func (t Train) ReturnDepartureArriveTime() (ok bool, departure, arrive time.Time
 	ok = false
 	var err error
 
-	date := t.When()
+	date, err := t.When()
+	if err != nil {
+		log.Errorln("Cannot get train date:", err)
+		return
+	}
 
 	// Departure
 	departure, err = time.Parse("15:04", t.ReturnDepartureTime)

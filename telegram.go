@@ -55,7 +55,14 @@ func escapeTelegramText(text string) string {
 }
 
 func convertDate(date string) string {
-	tm, err := time.Parse(DateFormat, date)
+	var tm time.Time
+	var err error
+	for _, format := range DateFormats {
+		tm, err = time.Parse(format, date)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		log.Errorln("Cannot parse time:", err)
 	}

@@ -82,12 +82,18 @@ func httpHandleTrainIcalHtml(baseURL string) http.HandlerFunc {
 			return
 		}
 
+		when, err := train.When()
+		if err != nil {
+			log.Errorln("Cannot get train date: ", trainID, err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
 		_, icalURL := httpICalAddressForTrain(train, baseURL)
 		err = calendarHtmlTemplate.ExecuteTemplate(w, "calendar.html", struct {
 			Train
 			ICalURL       string
 			FormattedDate string
-		}{train, icalURL, titler.String(monday.Format(train.When(), "Monday 2 January 2006, 15:04", monday.LocaleItIT))})
+		}{train, icalURL, titler.String(monday.Format(when, "Monday 2 January 2006, 15:04", monday.LocaleItIT))})
 		if err != nil {
 			log.Errorln(err)
 		}

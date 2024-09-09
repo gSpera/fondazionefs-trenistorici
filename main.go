@@ -81,7 +81,12 @@ func run(bot *TelegramBot, h *TrainArchive) {
 	hashDirty := false
 	log.Println("Hash", len(h.hash))
 	for _, train := range trains {
-		if train.When().After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
+		when, err := train.When()
+		if err != nil {
+			log.Errorln("Cannot get train date:", train, err)
+			continue
+		}
+		if when.After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
 			log.Infof("Skipping train %q, too far in the future: %q", train, train.Date)
 			continue
 		}
