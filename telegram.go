@@ -54,23 +54,11 @@ func escapeTelegramText(text string) string {
 	).Replace(text)
 }
 
-func convertDate(date string) string {
-	var tm time.Time
-	var err error
-	for _, format := range DateFormats {
-		tm, err = time.Parse(format, date)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		log.Errorln("Cannot parse time:", err)
-	}
+func convertDate(date time.Time) string {
+	dt := monday.Format(date, "Monday 2 January 2006", monday.LocaleItIT)
+	dt = strings.ToUpper(string(dt[0])) + dt[1:] // Not the best method
 
-	date = monday.Format(tm, "Monday 2 January 2006", monday.LocaleItIT)
-	date = strings.ToUpper(string(date[0])) + date[1:] // Not the best method
-
-	return date
+	return dt
 }
 
 type TelegramBot struct {
@@ -93,7 +81,16 @@ func NewTelegramBot(cfg Config) (TelegramBot, error) {
 
 func (b *TelegramBot) SendTrain(train Train) (int, error) {
 	text := &bytes.Buffer{}
-	err := msgTemplate.Execute(text, train)
+	data := struct {
+		Train
+
+		Verbose bool
+	}{
+		train,
+		b.Config.Verbose,
+	}
+
+	err := msgTemplate.Execute(text, data)
 	if err != nil {
 		return 0, fmt.Errorf("cannot execute template: %w", err)
 	}
@@ -195,7 +192,11 @@ defaultImg:
 func (b *TelegramBot) EditMessage(train Train, msgID int) error {
 	link := BaseURL + strings.TrimPrefix(train.Link, "/")
 	text := &bytes.Buffer{}
-	err := msgTemplate.Execute(text, train)
+	data := struct {
+		Train
+		Verbose bool
+	}{train, b.Config.Verbose}
+	err := msgTemplate.Execute(text, data)
 	if err != nil {
 		return fmt.Errorf("cannot execute template: %w", err)
 	}
@@ -235,11 +236,9 @@ func resizeImage(r io.Reader) (io.Reader, error) {
 	draw.ApproxBiLinear.Scale(resized, resized.Bounds(), img, img.Bounds(), draw.Over, nil)
 
 	pr, pw := io.Pipe()
-	fmt.Println("Starting encoding")
 	go func() {
 		jpeg.Encode(pw, resized, nil)
 		pw.Close()
 	}()
-	fmt.Println("Done encoding")
 	return pr, nil
 }

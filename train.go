@@ -95,6 +95,11 @@ func (t Train) When() (time.Time, error) {
 		return time.Time{}, fmt.Errorf("cannot parse train date: %w", err)
 	}
 
+	if date.Hour() == 23 {
+		log.Debugln("Train with hour 23:00 PM, skipping to next day to 9:00 AM, from: ", date)
+		date = date.Add(10 * time.Hour)
+	}
+
 	return date, nil
 }
 
@@ -127,6 +132,10 @@ func (t Train) DepartureArriveTime() (ok bool, departure, arrive time.Time) {
 	}
 
 	// Departure
+	if t.DepartureTime == "" {
+		return
+	}
+
 	departure, err = time.Parse("15:04", t.DepartureTime)
 	if err != nil {
 		log.Errorln("Train Departure time but cannot parse:", t.DepartureTime, ":", err)
@@ -170,7 +179,7 @@ func (t Train) ReturnDepartureArriveTime() (ok bool, departure, arrive time.Time
 	// Arrive
 	arrive, err = time.Parse("15:04", t.ReturnArriveTime)
 	if err != nil {
-		log.Errorln("return Train Departure time is not empty but cannot parse:", t.DepartureTime, ":", err)
+		log.Errorln("Return Train Arrive time is not empty but cannot parse:", t.DepartureTime, ":", err)
 		return
 	}
 

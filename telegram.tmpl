@@ -11,7 +11,7 @@ Nuovo treno storico: *{{.Title | escape}}*
 {{- if eq .Locomotive "Elettrotreno" }}🚄{{end}}
 {{.LocomotiveDetails | escape}}
 
- 📅 {{.Date | convertDate }}
+ 📅 {{.When | convertDate }}
 {{ if ne .PriceAdult "" }}
 🏷️ Prezzo {{ .PriceAdult | escape -}}€
 {{- if ne .PriceChildren ""}} \(Bambini {{.PriceChildren | escape }}€\) {{end -}}
@@ -28,4 +28,9 @@ Arrivo a *{{.ArriveStation | escape}}*
 {{ if ne .PriceAdultReturn "" }}
 🏷️ Prezzo {{ .PriceAdultReturn | escape }}€
 {{- if ne .PriceChildrenReturn ""}} \(Bambini {{.PriceChildrenReturn | escape }}€\) {{end}}
+{{end}}
+
+{{ if .Verbose }}
+*Verbose:*
+Hash: {{.Hash}}
 {{end}}

@@ -18,13 +18,18 @@ type Config struct {
 	TrainsUntilYearsInFuture  int
 	TrainsUntilMonthsInFuture int
 	TrainsUntilDaysInFuture   int
-	DryRun                    bool `json:"-"`
-	Silent                    bool `json:"-"`
+	DryRun                    bool      `json:"-"`
+	Silent                    bool      `json:"-"`
+	Verbose                   bool      `json:"-"`
+	FakeNow                   time.Time `json:"-"`
 }
 
 func main() {
 	dryRun := flag.Bool("dry", false, "dry run, doesn't send messages on telegram, updates hashes")
 	silent := flag.Bool("silent", false, "send silent messages")
+	verbose := flag.Bool("verbose", false, "verbose train message")
+	fakeNow := flag.String("fake-now", "", "fake the execution time")
+	debug := flag.Bool("debug", false, "debug log level")
 	flag.Parse()
 
 	cfgBytes, err := os.ReadFile("config.json")
@@ -36,6 +41,7 @@ func main() {
 		TrainsUntilYearsInFuture:  0,
 		TrainsUntilMonthsInFuture: 1,
 		TrainsUntilDaysInFuture:   0,
+		FakeNow:                   time.Time{},
 	}
 
 	err = json.Unmarshal(cfgBytes, &cfg)
@@ -45,6 +51,20 @@ func main() {
 
 	cfg.DryRun = *dryRun
 	cfg.Silent = *silent
+	cfg.Verbose = *verbose
+
+	if *fakeNow != "" {
+		cfg.FakeNow, err = time.Parse(time.RFC3339, *fakeNow)
+		if err != nil {
+			log.Errorln("Cannot parse fake execution time:", err)
+			os.Exit(1)
+		}
+	}
+
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+		log.Debugln("Showing debug log messages")
+	}
 
 	if cfg.TrainsUntilYearsInFuture < 0 || cfg.TrainsUntilMonthsInFuture < 0 || cfg.TrainsUntilDaysInFuture < 0 {
 		cfg.TrainsUntilYearsInFuture = math.MaxInt
@@ -80,20 +100,32 @@ func run(bot *TelegramBot, h *TrainArchive) {
 
 	hashDirty := false
 	log.Println("Hash", len(h.hash))
+	now := time.Now()
+	if !bot.Config.FakeNow.IsZero() {
+		log.Infoln("Faking execution time as:", bot.Config.FakeNow)
+		now = bot.Config.FakeNow
+	}
+
 	for _, train := range trains {
 		when, err := train.When()
 		if err != nil {
 			log.Errorln("Cannot get train date:", train, err)
 			continue
 		}
-		if when.After(time.Now().AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
-			log.Infof("Skipping train %q, too far in the future: %q", train, train.Date)
+
+		if when.Before(now) {
+			log.Debugf("Skipping train %q, in the past: %q", train, train.Date)
+			continue
+		}
+
+		if when.After(now.AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
+			log.Debugf("Skipping train %q, too far in the future: %q", train, train.Date)
 			continue
 		}
 
 		switch h.Compare(train) {
 		case TrainSaved:
-			log.Infoln("Skipping train, already sent:", train)
+			log.Debugln("Skipping train, already sent:", train)
 			continue
 		case TrainChanged:
 			if h.GetID(train) == 0 {
@@ -109,7 +141,7 @@ func run(bot *TelegramBot, h *TrainArchive) {
 			h.Add(train, h.GetID(train))
 			hashDirty = true
 		case TrainNotSaved:
-			log.Infoln("Sending train:", train)
+			log.Infoln("Sending train:", train, when)
 			msgID, err := bot.SendTrain(train)
 			if err != nil {
 				log.Errorln("Cannot send train:", err)
