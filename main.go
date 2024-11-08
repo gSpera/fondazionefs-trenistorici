@@ -22,6 +22,7 @@ type Config struct {
 	Silent                    bool      `json:"-"`
 	Verbose                   bool      `json:"-"`
 	FakeNow                   time.Time `json:"-"`
+	ForceUpdate               bool      `json:"-"`
 }
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	verbose := flag.Bool("verbose", false, "verbose train message")
 	fakeNow := flag.String("fake-now", "", "fake the execution time")
 	debug := flag.Bool("debug", false, "debug log level")
+	forceUpdate := flag.Bool("force-update", false, "force update trains")
 	flag.Parse()
 
 	cfgBytes, err := os.ReadFile("config.json")
@@ -52,6 +54,7 @@ func main() {
 	cfg.DryRun = *dryRun
 	cfg.Silent = *silent
 	cfg.Verbose = *verbose
+	cfg.ForceUpdate = *forceUpdate
 
 	if *fakeNow != "" {
 		cfg.FakeNow, err = time.Parse(time.RFC3339, *fakeNow)
@@ -106,6 +109,10 @@ func run(bot *TelegramBot, h *TrainArchive) {
 		now = bot.Config.FakeNow
 	}
 
+	if bot.Config.ForceUpdate {
+		log.Warnln("Force updateing trains")
+	}
+
 	for _, train := range trains {
 		when, err := train.When()
 		if err != nil {
@@ -123,7 +130,12 @@ func run(bot *TelegramBot, h *TrainArchive) {
 			continue
 		}
 
-		switch h.Compare(train) {
+		action := h.Compare(train)
+		if bot.Config.ForceUpdate {
+			action = TrainChanged
+		}
+
+		switch action {
 		case TrainSaved:
 			log.Debugln("Skipping train, already sent:", train)
 			continue
