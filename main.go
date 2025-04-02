@@ -29,7 +29,7 @@ func main() {
 	dryRun := flag.Bool("dry", false, "dry run, doesn't send messages on telegram, updates hashes")
 	silent := flag.Bool("silent", false, "send silent messages")
 	verbose := flag.Bool("verbose", false, "verbose train message")
-	fakeNow := flag.String("fake-now", "", "fake the execution time")
+	fakeNow := flag.String("fake-now", "", "fake the execution time (RFC3339)")
 	debug := flag.Bool("debug", false, "debug log level")
 	forceUpdate := flag.Bool("force-update", false, "force update trains")
 	flag.Parse()
@@ -121,12 +121,12 @@ func run(bot *TelegramBot, h *TrainArchive) {
 		}
 
 		if when.Before(now) {
-			log.Debugf("Skipping train %q, in the past: %q", train, train.Date)
+			log.Debugf("Skipping train %q, in the past: %q", train, when)
 			continue
 		}
 
 		if when.After(now.AddDate(bot.TrainsUntilYearsInFuture, bot.TrainsUntilMonthsInFuture, bot.TrainsUntilDaysInFuture)) {
-			log.Debugf("Skipping train %q, too far in the future: %q", train, train.Date)
+			log.Debugf("Skipping train %q, too far in the future: %q", train, when)
 			continue
 		}
 

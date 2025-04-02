@@ -61,7 +61,7 @@ type Train struct {
 	Locomotive          string `json:"locomotive"`
 	LocomotiveDetails   string `json:"locomotiveOtherDetails"`
 	Month               string `json:"month"`
-	Date                string `json:"dateProp"`
+	MonthDay            string `json:"date"`
 	IsTimeless          bool   `json:"isTimeless"`
 	DepartureStation    string `json:"departureStation"`
 	DepartureTime       string `json:"departureHour"`
@@ -81,23 +81,22 @@ func (t Train) String() string {
 }
 
 func (t Train) When() (time.Time, error) {
-	var date time.Time
-	var err error
-
-	for _, format := range DateFormats {
-		date, err = time.Parse(format, t.Date)
-		if err == nil {
-			break
-		}
+	departureTime := t.DepartureTime
+	if len(strings.TrimSpace(departureTime)) == 0 {
+		log.Debugln("Train without time, moving to 10:00 AM")
+		departureTime = "10:00"
 	}
 
+	date, err := time.Parse("2/1 3:4", t.MonthDay+" "+departureTime)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("cannot parse train date: %w", err)
+		return time.Time{}, fmt.Errorf("cannot parse train date: (%s) %w", t.MonthDay+" "+departureTime, err)
 	}
 
-	if date.Hour() == 23 {
-		log.Debugln("Train with hour 23:00 PM, skipping to next day to 9:00 AM, from: ", date)
-		date = date.Add(10 * time.Hour)
+	date = date.AddDate(time.Now().Year(), 0, 0)
+	if time.Now().Month() > 10 && date.Month() < 3 {
+		// Rollover
+		log.Debugln("Rollover date", date)
+		date = date.AddDate(1, 0, 0)
 	}
 
 	return date, nil
