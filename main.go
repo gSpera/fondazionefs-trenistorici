@@ -89,6 +89,17 @@ func main() {
 
 	ticker := time.NewTicker(time.Hour)
 	for {
+		now := time.Now()
+		if !bot.Config.FakeNow.IsZero() {
+			now = bot.Config.FakeNow
+		}
+
+		if now.Hour() > 21 || now.Hour() < 9 {
+			log.Infoln("Skipping night time:", bot.FakeNow)
+			<-ticker.C
+			continue
+		}
+
 		run(&bot, h)
 		<-ticker.C
 	}
