@@ -87,7 +87,7 @@ func (t Train) When() (time.Time, error) {
 		departureTime = "10:00"
 	}
 
-	date, err := time.Parse("2/1 3:4", t.MonthDay+" "+departureTime)
+	date, err := time.Parse("2/1 15:4", t.MonthDay+" "+departureTime)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("cannot parse train date: (%s) %w", t.MonthDay+" "+departureTime, err)
 	}
